@@ -3,7 +3,8 @@ import fs from "fs";
 import path from "path";
 
 // Set the log directory
-const logDirectory = path.join(process.cwd(), 'logs');
+// const logDirectory = path.join(process.cwd(), 'logs');
+const logDirectory = '/tmp/logs';
 if (!fs.existsSync(logDirectory)) {
     fs.mkdirSync(logDirectory);
 }
