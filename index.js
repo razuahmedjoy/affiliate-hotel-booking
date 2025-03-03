@@ -19,6 +19,7 @@ const allowedOrigins = [
     'http://localhost:5173',
     'http://localhost:5174',
     'https://yolast.vercel.app',
+    'https://www.yolast.com',
     'https://yolast.com',
 ]
 
