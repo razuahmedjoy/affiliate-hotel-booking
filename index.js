@@ -53,3 +53,5 @@ app.use(handleRouteNotFound);
 
 // Server & database
 bootstrap(app);
+
+export default app;
