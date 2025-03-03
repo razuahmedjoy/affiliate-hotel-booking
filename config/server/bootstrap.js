@@ -12,7 +12,20 @@ process.on('uncaughtException', (error) => {
 // server listener
 const bootstrap = async (app) => {
     try {
-        app.listen(config.PORT, async () => {
+        if (process.env.ENVIROMENT === 'local') {
+            app.listen(config.PORT, async () => {
+                infoLogger.info(`Listening on port http://localhost:${config.PORT}`);
+
+                // connect database after server started
+                // database()
+                await prisma.$connect();
+                console.log('Connected to the database successfully!');
+
+
+            });
+        }
+        else {
+
             infoLogger.info(`Listening on port http://localhost:${config.PORT}`);
 
             // connect database after server started
@@ -20,8 +33,7 @@ const bootstrap = async (app) => {
             await prisma.$connect();
             console.log('Connected to the database successfully!');
 
-
-        });
+        }
     } catch (error) {
         errorLogger.error(`Error creating server: ${error instanceof Error ? error.message : 'unknown'}`);
         process.exit(1);

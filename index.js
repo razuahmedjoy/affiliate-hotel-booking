@@ -52,6 +52,9 @@ app.use((err, req, res, next) => {
 app.use(handleRouteNotFound);
 
 // Server & database
+
+
+
 bootstrap(app);
 
 export default app;
