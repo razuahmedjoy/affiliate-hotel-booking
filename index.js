@@ -33,11 +33,14 @@ const corsOptions = {
             callback(new Error('Not allowed by CORS'));
         }
     },
+    credentials: true,  // Allow credentials
 };
 
 // Middleware
-app.use(express.json());
 app.use(cors(corsOptions));
+// Handle preflight OPTIONS requests
+app.options('*', cors(corsOptions));
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(sanitize());
 app.use(xss());
