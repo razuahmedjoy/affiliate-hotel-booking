@@ -28,7 +28,7 @@ export const generatePaymentLink = async (affiliateId, data) => {
                 email: data?.email,
                 phone: data?.phone
             },
-            callback_url: `http://localhost:5000/api/booking/${affiliateId}/prebooking/razorpay/callback`,
+            callback_url: `${process.env.BACKEND_URL}/api/booking/${affiliateId}/prebooking/razorpay/callback`,
             callback_method: "get",
 
 

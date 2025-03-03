@@ -113,7 +113,7 @@ export const AffiliatePrebookingCallback = catchAsync(async (req, res) => {
         // console.log(affiliatePrebooking);
     }
 
-    res.redirect(`http://localhost:5173/prebooking/payment/success?transactionId=${paymentDetails.razorpay_payment_link_reference_id}&affiliateId=${affiliateId}`);
+    res.redirect(`${process.env.FRONTEND_URL}/prebooking/payment/success?transactionId=${paymentDetails.razorpay_payment_link_reference_id}&affiliateId=${affiliateId}`);
 
     // http://localhost:5000/api/booking/cm7lpix080001u3tg1ytldjt2/prebooking/razorpay/callback?razorpay_payment_id=pay_Q1XSnTKwsopeG3&razorpay_payment_link_id=plink_Q1XS9TF0V3lrGz&razorpay_payment_link_reference_id=&razorpay_payment_link_status=paid&razorpay_signature=2f3ec68a28d60a8e1caf59d7b0af1ede50a64e4c1af5c2e7b155541ae1685bb4
 
