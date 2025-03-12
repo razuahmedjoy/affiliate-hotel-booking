@@ -15,5 +15,12 @@ module.exports = {
         'no-console': 'warn',
         'import/prefer-default-export': 'off',
         'no-unused-vars': ['warn', { argsIgnorePattern: 'next' }],
+
+        "import/extensions": ["error", "always"],
+        "import/no-unresolved": "off",
+        "import/no-extraneous-dependencies": "off",
+        "import/no-cycle": "off",
+        
+
     },
 };

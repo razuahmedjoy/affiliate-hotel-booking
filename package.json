@@ -8,7 +8,8 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "seed:zoho": "node seed/seedZohoToken.js"
   },
   "dependencies": {
     "@prisma/client": "^6.2.1",
@@ -39,9 +40,8 @@
     "@babel/cli": "^7.26.4",
     "@babel/core": "^7.26.0",
     "@babel/preset-env": "^7.26.0",
-    "axios": "^1.7.9",
+    "axios": "^1.8.2",
     "babel-node": "^0.0.1-security",
- 
     "prisma": "^6.2.1"
   }
 }

@@ -4,7 +4,7 @@ import path from "path";
 
 // Set the log directory
 // const logDirectory = path.join(process.cwd(), 'logs');
-const logDirectory = '/tmp/logs';
+const logDirectory = process.env.NODE_ENV === "production" ? "/var/log" : path.join(process.cwd(), "logs");
 if (!fs.existsSync(logDirectory)) {
     fs.mkdirSync(logDirectory);
 }

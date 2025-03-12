@@ -6,6 +6,8 @@ import { validateRequest } from '../../libs/middleware/validateRequest.js';
 import { affiliateRegistrationSchema } from '../../libs/validators/AffiliateValidation.js';
 import { downloadQrCode } from '../controllers/AffiliateController/AffiliateDashboardController.js';
 import authMiddleware from '../../libs/middleware/authMiddleware.js';
+import axios from 'axios';
+import prisma from '../../prisma/client.js';
 const router = express.Router();
 
 
@@ -24,6 +26,64 @@ router.get('/', async (req, res) => {
     });
 });
 
+router.get('/auth/callback', async (req, res) => {
+    try {
+        const authorizationCode = req.query.code;
+
+        if (!authorizationCode) {
+            return res.status(400).send('Authorization code missing');
+        }
+
+        // Exchange authorization code for access token
+        const tokenResponse = await axios.post(
+            `https://accounts.zoho.in/oauth/v2/token`,
+            null,
+            {
+                params: {
+                    code: authorizationCode,
+                    client_id: process.env.ZOHO_CLIENT_ID,
+                    client_secret: process.env.ZOHO_CLIENT_SECRET,
+                    redirect_uri: process.env.ZOHO_REDIRECT_URI,
+                    grant_type: 'authorization_code'
+                }
+            }
+        );
+        console.log(tokenResponse.data);
+        // Extract tokens from response
+        const { access_token, refresh_token, expires_in:expiresIn } = tokenResponse.data;
+        if (typeof expiresIn !== 'number' || isNaN(expiresIn)) {
+            throw new Error('Invalid token expiration received from Zoho');
+        }
+
+        // Calculate expiration time properly
+        const expiresAt = new Date(Date.now() + (expiresIn * 1000));
+
+        const newToken = await prisma.zohoTokens.create({
+            data: {
+                access_token,
+                refresh_token,
+                expires_in: expiresAt,
+                is_refreshing: false
+            }
+        });
+  
+
+        // Send response (you can customize this)
+        res.json({
+            success: true,
+            message: 'Authorization successful!',
+            access_token,
+            expires_in:expiresIn,
+            refresh_token,
+            data: tokenResponse.data,
+            updatedToken
+        });
+
+    } catch (error) {
+        console.error('Callback error:', error.response ? error.response.data : error.message);
+        res.status(500).send('Authentication failed');
+    }
+})
 
 router.post('/register', validateRequest(affiliateRegistrationSchema), AffiliateRegister);
 router.post('/login', AffiliateLogin);

@@ -11,16 +11,20 @@ import requestLogger from './config/logger/requestLogger.js';
 import upload from './config/multer/multerConfig.js';
 import handleRouteNotFound from './app/routes/handleRouteNotFound.js';
 import handleGlobalErrors from './config/errors/handleGlobalErrors.js';
+import { ZohoCRM } from './libs/helpers/zohocrm.js';
+import prisma from './prisma/client.js';
 
 const app = express();
 
 
 const allowedOrigins = [
+    // allow all origins
+    '*',
     'http://localhost:5173',
     'http://localhost:5174',
+    'https://yolast.com',
     'https://yolast.vercel.app',
     'https://www.yolast.com',
-    'https://yolast.com',
 ]
 
 
@@ -64,6 +68,60 @@ app.use('/public', express.static('public'));
 app.get('/', (req, res) => {
     const filePath = path.join(process.cwd(), 'public', 'html', 'index.html');
     res.sendFile(filePath);
+});
+
+
+
+app.get('/delete-zoho-tokens', async (req, res) => {
+    try {
+        await prisma.zohoTokens.deleteMany();
+        res.json({ message: 'Tokens deleted' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.post('/test-zoho-post', async (req, res) => {
+    try {
+        console.log(req.body);
+        const response = await ZohoCRM.postData("Affiliates", req.body);
+        res.status(200).json(response);
+
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.get('/zoho/authenticate', async (req, res) => {
+    try {
+        const status = await ZohoCRM.authenticate();
+        res.json(status);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.get('/token-status', async (req, res) => {
+    try {
+        const status = await ZohoCRM.getTokenStatus();
+        res.json(status);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.get('/tokeninitiate', async (req, res) => {
+    // redirect to zoho auth url
+    // first check if there is both access token and refresh token in the database
+    // if not, redirect to zoho auth url
+    // if yes, check if the access token is still valid
+    const isTokenExists = await prisma.zohoTokens.findFirst({});
+    if (!isTokenExists?.access_token || !isTokenExists?.refresh_token) {
+        // redirect to zoho auth url
+        const authUrl = await ZohoCRM.getAuthUrl();
+        console.log(authUrl);
+        res.redirect(authUrl);
+    } else {
+        // check if the token is still valid
+        res.json({ message: 'Token exists' });
+    }
 });
 
 // Register all routes under `/api`

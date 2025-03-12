@@ -5,7 +5,7 @@ generator client {
 datasource db {
     provider = "postgresql"
     url      = env("DATABASE_URL")
-    
+
     // directUrl = env("DIRECT_URL")
 }
 
@@ -63,11 +63,11 @@ model Customer {
 }
 
 model InitialAffiliatePayment {
-    id            String   @id @default(uuid())
-    status        String   @default("CREATED")
-    isActive      Boolean  @default(true)
+    id       String  @id @default(uuid())
+    status   String  @default("CREATED")
+    isActive Boolean @default(true)
 
-    transactionId String  @unique 
+    transactionId String   @unique
     affiliateId   String?
     customerId    String?
     paymentLink   String?
@@ -81,8 +81,13 @@ model InitialAffiliatePayment {
 }
 
 model ZohoTokens {
-    id            Int      @id @default(autoincrement()) // Primary key
-    access_token  String // The Zoho CRM Access Token
-    refresh_token String // The Zoho CRM Refresh Token
-    created_at    DateTime @default(now()) // Timestamp when token was created
+    id            Int      @id @default(autoincrement())
+    access_token  String
+    refresh_token String
+    expires_at    DateTime @db.Timestamp(6)  // Correct native type
+    created_at    DateTime @default(now()) @db.Timestamp(6)
+    updated_at    DateTime @updatedAt @db.Timestamp(6)
+    is_refreshing Boolean @default(false)
+
+    @@index([expires_at], name: "expires_at_index")
 }

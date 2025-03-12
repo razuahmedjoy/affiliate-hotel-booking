@@ -67,33 +67,61 @@ export const redirectToZoho = catchAsync(async (req, res) => {
 
 export const handleZohoCallback = catchAsync(async (req, res) => {
 
-    const authorizationCode = req.query.code;
-    const clientId = process.env.ZOHO_CLIENT_ID;
-    const clientSecret = process.env.ZOHO_CLIENT_SECRET;
-    const redirectUri = 'http://localhost:8000/api/zoho/callback';
+    try {
+        const authorizationCode = req.query.code;
+        console.log(authorizationCode);
+        if (!authorizationCode) {
+            return res.status(400).send('Authorization code missing');
+        }
+
+        // Exchange authorization code for access token
+        const tokenResponse = await axios.post(
+            `https://accounts.zoho.in/oauth/v2/token`,
+            null,
+            {
+                params: {
+                    code: authorizationCode,
+                    client_id: process.env.ZOHO_CLIENT_ID,
+                    client_secret: process.env.ZOHO_CLIENT_SECRET,
+                    redirect_uri: process.env.ZOHO_REDIRECT_URL,
+                    grant_type: 'authorization_code'
+                }
+            }
+        );
+        console.log(tokenResponse.data);
+        // Extract tokens from response
+        const { access_token, refresh_token, expires_in: expiresIn } = tokenResponse.data;
+        if (typeof expiresIn !== 'number' || isNaN(expiresIn)) {
+            throw new Error('Invalid token expiration received from Zoho');
+        }
+
+        // Calculate expiration time properly
+        const expiresAt = new Date(Date.now() + (expiresIn * 1000));
+
+        const newToken = await prisma.zohoTokens.create({
+            data: {
+                access_token,
+                refresh_token,
+                expires_at: expiresAt,
+                is_refreshing: false
+            }
+        });
 
 
-    // Exchange the authorization code for an access token and refresh token
-    const response = await axios.post('https://accounts.zoho.com/oauth/v2/token', null, {
-        params: {
-            client_id: clientId,
-            client_secret: clientSecret,
-            code: authorizationCode,
-            redirect_uri: redirectUri,
-            grant_type: 'authorization_code',
-        },
-    });
-    console.log(response)
-    const { access_token, refresh_token } = response.data;
+        // Send response (you can customize this)
+        res.json({
+            success: true,
+            message: 'Authorization successful!',
+            access_token,
+            expires_in: expiresIn,
+            refresh_token,
+            data: tokenResponse.data,
+            newToken
+        });
 
-    // Save the access token and refresh token securely (e.g., in the database)
-    await saveTokensToDatabase(access_token, refresh_token);
-
-    sendResponse(res, {
-        statusCode: 200,
-        success: true,
-        data:response?.data,
-        message: 'Zoho CRM authentication successful.',
-    });
+    } catch (error) {
+        console.error('Callback error:', error.response ? error.response.data : error.message);
+        res.status(500).send('Authentication failed');
+    }
 
 });

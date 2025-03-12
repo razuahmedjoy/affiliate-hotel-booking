@@ -12,7 +12,7 @@ process.on('uncaughtException', (error) => {
 // server listener
 const bootstrap = async (app) => {
     try {
-        if (process.env.ENVIROMENT === 'local') {
+        if (process.env.ENVIRONMENT === 'local') {
             app.listen(config.PORT, async () => {
                 infoLogger.info(`Listening on port http://localhost:${config.PORT}`);
 

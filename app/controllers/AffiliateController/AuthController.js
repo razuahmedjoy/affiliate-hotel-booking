@@ -5,6 +5,7 @@ import { generateQRCode } from "../../../libs/helpers/qrGenerator.js";
 import httpStatus from "http-status";
 import prisma from "../../../prisma/client.js";
 import Razorpay from "razorpay";
+import { ZohoCRM } from "../../../libs/helpers/zohocrm.js";
 
 const createPaymentLinkAndQrCode = async (affiliateId, referralLink, location) => {
 
@@ -60,6 +61,8 @@ export const AffiliateRegister = catchAsync(async (req, res) => {
     const validatedData = req.body;
     const hashedPassword = await generateHash(validatedData.password);
 
+
+
     // Save the affiliate data to the database
     const newAffiliate = await prisma.affiliate.create({
         data: {
@@ -100,13 +103,30 @@ export const AffiliateRegister = catchAsync(async (req, res) => {
         },
     });
 
+    const dataToSendToZoho = {
+        "Name": newAffiliate.name,
+        "Email": newAffiliate.email,
+        "phone_number": newAffiliate.phone,
+        "Address": `${newAffiliate.address.street}\n${newAffiliate.address.city}\n${newAffiliate.address.state}\n${newAffiliate.address.country}\n${newAffiliate.address.zipCode}`,
+    }
+    const sentToZoho = await ZohoCRM.postData("Affiliates", dataToSendToZoho);
+
+    if (!sentToZoho?.data?.code === "SUCCESS") {
+        return sendResponse(res, {
+            statusCode: httpStatus.BAD_REQUEST,
+            success: false,
+            message: "Failed to send data to Zoho",
+            data: sentToZoho,
+        });
+    }
+
     // Generate a JWT token
     const token = generateToken(updatedAffiliate);
 
 
     const affiliateUser = { ...updatedAffiliate, password: undefined };
 
-    sendResponse(res, {
+    return sendResponse(res, {
         statusCode: httpStatus.CREATED,
         success: true,
         message: "Affiliate registered successfully",
