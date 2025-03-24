@@ -13,14 +13,14 @@ export const catchAsync = (fn) => async (req, res, next) => {
 // Send response
 export const sendResponse = (res, data) => {
     const responseData = {
-        statusCode: data.statusCode,
-        success: data.success,
-        message: data.message || null,
-        meta: data.meta || null || undefined,
-        data: data.data || null || undefined,
+        statusCode: data?.statusCode || data?.status || 500,
+        success: data?.success || false,
+        message: data?.message || null,
+        meta: data?.meta || null || undefined,
+        data: data?.data || null || undefined,
     };
 
-    res.status(data.statusCode).json(responseData);
+    res.status(data?.statusCode || data?.status || 500).json(responseData);
 };
 
 // Get request full url

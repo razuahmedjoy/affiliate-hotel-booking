@@ -35,6 +35,15 @@ model Affiliate {
     qrCodeUrl   String?
     paymentLink String?
 
+    bankName      String?
+    bankAccount   String?
+    bankAccountNo String?
+    bankBranch    String?
+    bankLocation      String?
+    bankSwiftCode String?
+    bankRoutingNo String?
+    bankIban       String?
+
     role      String   @default("affiliate")
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -48,7 +57,7 @@ model Affiliate {
 model Customer {
     id       String @id @default(uuid())
     name     String
-    email    String @unique
+    email    String? @unique
     phone    String
     password String
     role     String @default("customer")

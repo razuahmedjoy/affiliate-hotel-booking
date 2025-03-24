@@ -27,6 +27,8 @@ export const AffiliatePrebooking = catchAsync(async (req, res) => {
     const affliatePayment = await prisma.initialAffiliatePayment.deleteMany();
     console.log('customer', customer);
 
+    
+
     // match the affiliate id from the request and check if the affiliate exists or not, if exists, get it
     // if not, return an error message
     const affiliateId = req.params.affiliateId;
@@ -49,7 +51,6 @@ export const AffiliatePrebooking = catchAsync(async (req, res) => {
     const newCustomer = await prisma.customer.create({
         data: {
             name: req.body.name,
-            email: req.body.email,
             phone: req.body.phone,
             password: hashed
         },

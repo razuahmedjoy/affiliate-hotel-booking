@@ -1,4 +1,4 @@
-import prisma from "../../prisma/client.js";
+import prisma from "../../prisma/client.js"; 
 import { errorLogger, infoLogger } from "../logger/logConfig.js";
 import { config } from "./config.js";
 import database from "./database.js";
@@ -13,15 +13,10 @@ process.on('uncaughtException', (error) => {
 const bootstrap = async (app) => {
     try {
         if (process.env.ENVIRONMENT === 'local') {
-            app.listen(config.PORT, async () => {
+            await prisma.$connect();
+            console.log('Connected to the database successfully!');
+            app.listen(config.PORT, () => {
                 infoLogger.info(`Listening on port http://localhost:${config.PORT}`);
-
-                // connect database after server started
-                // database()
-                await prisma.$connect();
-                console.log('Connected to the database successfully!');
-
-
             });
         }
         else {

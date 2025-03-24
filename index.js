@@ -1,5 +1,5 @@
-import express from 'express';
-import path from 'path';
+import express from 'express'; 
+import path from 'path'; 
 import cors from 'cors';
 import helmet from "helmet";
 import xss from 'xss-clean';
@@ -11,8 +11,9 @@ import requestLogger from './config/logger/requestLogger.js';
 import upload from './config/multer/multerConfig.js';
 import handleRouteNotFound from './app/routes/handleRouteNotFound.js';
 import handleGlobalErrors from './config/errors/handleGlobalErrors.js';
-import { ZohoCRM } from './libs/helpers/zohocrm.js';
+import { ZohoCRM } from './libs/helpers/zohocrm.js'; 
 import prisma from './prisma/client.js';
+import { sendResponse } from './libs/helpers/global.js';
 
 const app = express();
 
@@ -87,7 +88,8 @@ app.post('/test-zoho-post', async (req, res) => {
         res.status(200).json(response);
 
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.log(error)
+        sendResponse(res, error.response);
     }
 });
 

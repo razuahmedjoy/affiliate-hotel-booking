@@ -82,7 +82,7 @@ export const ZohoCRM = {
         });
     },
 
-    async postData(module, data) {
+    async postDataPrev(module, data) {
         try {
             let tokenRecord = await this.getTokenRecord();
 
@@ -114,7 +114,7 @@ export const ZohoCRM = {
                     { data: [data] },
                     {
                         headers: {
-                            Authorization: `Zoho-oauthtoken ${tokenRecord.access_token}`,
+                            Authorization: `Zoho-oauthtoken 1000.4475051528e29d71d7751706e757aa09.b90ed5b9608f43285f930bf155d53356`,
                             'Content-Type': 'application/json'
                         }
                     }
@@ -122,9 +122,11 @@ export const ZohoCRM = {
                 return response.data;
             }
             catch (error) {
+                console.log(error?.response);
                 if (error.response?.status === 401) {
+
                     // Token might have been revoked - clear local cache
-                    await prisma.zohoTokens.deleteMany();
+                    // await prisma.zohoTokens.deleteMany();
                     throw new Error('Authentication failed - please reauthenticate');
                 }
                 console.error('Zoho CRM API Error:', error.response?.data || error.message);
@@ -133,15 +135,89 @@ export const ZohoCRM = {
             }
         } catch (error) {
             if (error.response?.status === 401) {
-                // Token might have been revoked - clear local cache
-                await prisma.zohoTokens.deleteMany();
+
                 throw new Error('Authentication failed - please reauthenticate');
             }
             console.error('Zoho CRM API Error:', error.response?.data || error.message);
             throw error;
         }
     },
+    async postData(module, data, retryCount = 0) {
 
+        const MAX_RETRIES = 1;
+        try {
+            let tokenRecord = await this.getTokenRecord();
+
+            // Token check and refresh logic
+            if (!tokenRecord || !tokenRecord.access_token || new Date() > tokenRecord.expires_at) {
+                const shouldRefresh = await this.handleTokenRefresh();
+                if (shouldRefresh) {
+                    try {
+                        tokenRecord = await this.authenticate();
+                    } finally {
+                        await prisma.zohoTokens.update({
+                            where: { id: tokenRecord.id },
+                            data: { is_refreshing: false }
+                        });
+                    }
+                } else {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    return this.postData(module, data, retryCount);
+                }
+            }
+
+            // API request with current token
+            const response = await axios.post(
+                `${process.env.ZOHO_API_URL}${module}`,
+                { data: [data] },
+                {
+                    headers: {
+                        Authorization: `Zoho-oauthtoken 1000.4475051528e29d71d7751706e757aa09.b90ed5b9608f43285f930bf155d53356`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+            return response.data;
+
+        } catch (error) {
+            // Handle token errors
+            if (retryCount < MAX_RETRIES &&
+                (error.response?.data?.code === 'INVALID_TOKEN' || error.response?.status === 401)) {
+
+                const shouldRefresh = await this.handleTokenRefresh();
+                if (shouldRefresh) {
+                    try {
+                        await this.authenticate();
+                        return this.postData(module, data, retryCount + 1);
+                    } finally {
+                        const tokenRecord = await this.getTokenRecord();
+                        await prisma.zohoTokens.update({
+                            where: { id: tokenRecord.id },
+                            data: { is_refreshing: false }
+                        });
+                    }
+                } else {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    return this.postData(module, data, retryCount + 1);
+                }
+            }
+
+            console.log('Zoho CRM API Error:', error.response?.data || error.message);
+
+            // Final error handling
+            if (error.response?.status === 401) {
+                // await prisma.zohoTokens.deleteMany();
+
+                throw Error({
+                    statusCode: error.response?.status,
+                    message: 'Authentication failed - please reauthenticate',
+                    data: error.response?.data
+                });
+            }
+            console.error('Zoho CRM API Error:', error.response?.data || error.message);
+            throw Error({ error: error.response?.data?.message || error.message });
+        }
+    },
 
     // Initial setup function (run once)
     async initializeTokens(accessToken, refreshToken, expires_at) {
