@@ -72,6 +72,23 @@ app.get('/', (req, res) => {
 });
 
 
+// delete all records from all tables with cascade delete but not the zoho tokens table
+app.get('/delete-all-records', async (req, res) => {
+    try {
+        await prisma.$transaction([
+            prisma.address.deleteMany(),
+            prisma.affiliate.deleteMany(),
+            prisma.user.deleteMany(),
+            prisma.initialAffiliatePayment.deleteMany(),
+            prisma.customer.deleteMany(),
+            // Add other tables here
+        ]);
+        res.json({ message: 'All records deleted' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 
 app.get('/delete-zoho-tokens', async (req, res) => {
     try {

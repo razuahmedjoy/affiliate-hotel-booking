@@ -28,7 +28,7 @@ export const ZohoCRM = {
             });
 
 
-            // console.log(response.data);
+            console.log(response.data);
 
             // Validate expires_in value
             const expiresIn = response.data.expires_in;
@@ -172,7 +172,7 @@ export const ZohoCRM = {
                 { data: [data] },
                 {
                     headers: {
-                        Authorization: `Zoho-oauthtoken 1000.4475051528e29d71d7751706e757aa09.b90ed5b9608f43285f930bf155d53356`,
+                        Authorization: `Zoho-oauthtoken ${tokenRecord.access_token}`,
                         'Content-Type': 'application/json'
                     }
                 }
@@ -225,7 +225,7 @@ export const ZohoCRM = {
             data: {
                 access_token: '', // Will be populated on first refresh
                 refresh_token: refreshToken,
-                expires_at: expires_at // Force immediate refresh
+                expires_at: expires_at || new Date(Date.now() + 3600 * 1000), // Default to 1 hour from now
             }
         });
     },

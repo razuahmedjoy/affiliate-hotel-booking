@@ -17,53 +17,96 @@ model Address {
     country String?
     zipCode String?
 
-    affiliate Affiliate? @relation
-    customer  Customer?  @relation
+    affiliate   Affiliate? @relation(fields: [affiliateId], references: [id])
+    affiliateId String?
+
+    customer   Customer? @relation(fields: [customerId], references: [id])
+    customerId String?
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 }
 
-model Affiliate {
-    id String @id @default(uuid())
+// create role enum
+enum Role {
+    USER
+    ADMIN
+    AFFILIATE
+    CUSTOMER
+}
 
-    name        String
-    email       String  @unique
-    phone       String
-    password    String
+model User {
+    id             String    @id @default(uuid())
+    firstName      String?
+    lastName       String?
+    email          String?   @unique
+    phone          String?   @unique @db.VarChar(20)
+    whatsappNumber String?   @unique @db.VarChar(20)
+    dateOfBirth    DateTime? @db.Date
+    gender         String?   @db.VarChar(10)
+    password       String    @db.VarChar(255)
+    role           String[]  @default(["USER"])
+
+    isActive        Boolean @default(false)
+    isPhoneVerified Boolean @default(false)
+    isEmailVerified Boolean @default(false)
+    isDeleted       Boolean @default(false)
+    isBanned        Boolean @default(false)
+    isSuperAdmin    Boolean @default(false)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    affiliate Affiliate?
+}
+
+model Affiliate {
+    id          String  @id @default(uuid())
     uniqueCode  String  @unique @default(cuid())
     qrCodeUrl   String?
     paymentLink String?
 
-    bankName      String?
-    bankAccount   String?
-    bankAccountNo String?
-    bankBranch    String?
-    bankLocation      String?
-    bankSwiftCode String?
-    bankRoutingNo String?
-    bankIban       String?
+    affiliateType    String?
+    socialMediaLinks String?
+    businessName     String?
+    gstNumber        String?
 
-    role      String   @default("affiliate")
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+    promotionMethod String[]
 
-    addressId String?  @unique
-    address   Address? @relation(fields: [addressId], references: [id])
+    upiId           String?
+    bankName        String?
+    accountName     String?
+    accountNumber   String?
+    bankBranch      String?
+    bankLocation    String?
+    bankSwiftCode   String?
+    bankRoutingNo   String?
+    bankIban        String?
+    bankIfscCode    String?
+    bankMicrCode    String?
+    bankAccountType String?
+    bankAddress     String?
+
+    user   User   @relation(fields: [userId], references: [id])
+    userId String @unique
+
+    addresses Address[]
 
     InitialAffiliatePayments InitialAffiliatePayment[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 }
 
 model Customer {
-    id       String @id @default(uuid())
+    id       String  @id @default(uuid())
     name     String
     email    String? @unique
     phone    String
     password String
-    role     String @default("customer")
+    role     String  @default("customer")
 
-    addressId String?  @unique
-    address   Address? @relation(fields: [addressId], references: [id])
+    addresses Address[]
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -93,10 +136,10 @@ model ZohoTokens {
     id            Int      @id @default(autoincrement())
     access_token  String
     refresh_token String
-    expires_at    DateTime @db.Timestamp(6)  // Correct native type
+    expires_at    DateTime @db.Timestamp(6) // Correct native type
     created_at    DateTime @default(now()) @db.Timestamp(6)
     updated_at    DateTime @updatedAt @db.Timestamp(6)
-    is_refreshing Boolean @default(false)
+    is_refreshing Boolean  @default(false)
 
     @@index([expires_at], name: "expires_at_index")
 }
