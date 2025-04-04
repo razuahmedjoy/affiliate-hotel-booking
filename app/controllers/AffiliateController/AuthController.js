@@ -68,7 +68,8 @@ export const AffiliateRegister = catchAsync(async (req, res) => {
     const formattedDate = normalizedDate.toISOString();
 
     // Start the transaction
-    const result = await prisma.$transaction(async (prisma) => {
+    const result = await prisma.$transaction(async (prisma) => 
+        {
         // Create the User first
         const newUser = await prisma.user.create({
             data: {
@@ -152,6 +153,9 @@ export const AffiliateRegister = catchAsync(async (req, res) => {
         }
 
         return { updatedAffiliate, referralLink };
+    },{
+        maxWait: 10000, // Maximum wait time for the transaction
+        timeout: 10000, // Maximum execution time for the transaction
     });
 
     const { updatedAffiliate, referralLink } = result;
