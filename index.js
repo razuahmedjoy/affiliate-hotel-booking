@@ -100,7 +100,7 @@ app.get('/delete-zoho-tokens', async (req, res) => {
 });
 app.post('/test-zoho-post', async (req, res) => {
     try {
-        console.log(req.body);
+        // console.log(req.body);
         const response = await ZohoCRM.postData("Affiliates", req.body);
         res.status(200).json(response);
 
@@ -122,6 +122,16 @@ app.get('/token-status', async (req, res) => {
     try {
         const status = await ZohoCRM.getTokenStatus();
         res.json(status);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.get('/zoho-tokens', async (req, res) => {
+    try {
+  
+        // get all tokens from the database
+        const tokens = await prisma.zohoTokens.findMany();
+        res.json(tokens);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

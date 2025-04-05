@@ -23,11 +23,11 @@ const bootstrap = async (app) => {
         else {
 
         
-            infoLogger.info(`Listening on port http://localhost:${config.PORT}`);
+            // infoLogger.info(`Listening on port http://localhost:${config.PORT}`);
 
-            // connect database after server started
-            // database()
-            console.log('Connected to the database successfully!');
+            // // connect database after server started
+            // // database()
+            // console.log('Connected to the database successfully!');
 
         }
     } catch (error) {

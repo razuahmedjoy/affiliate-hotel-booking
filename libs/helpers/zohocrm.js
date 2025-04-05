@@ -150,11 +150,19 @@ export const ZohoCRM = {
 
             // Token check and refresh logic
             if (!tokenRecord || !tokenRecord.access_token || new Date() > tokenRecord.expires_at) {
+
+                console.log(tokenRecord.access_token," acess token");
+                console.log("Token expired at ", tokenRecord.expires_at);
+                console.log('Token expired or not found, attempting refresh...');
+
                 const shouldRefresh = await this.handleTokenRefresh();
                 if (shouldRefresh) {
+
                     try {
+                        console.log('Refreshing token...');
                         tokenRecord = await this.authenticate();
                     } finally {
+                        console.log('Releasing refresh lock...');
                         await prisma.zohoTokens.update({
                             where: { id: tokenRecord.id },
                             data: { is_refreshing: false }
@@ -166,6 +174,7 @@ export const ZohoCRM = {
                 }
             }
 
+            console.log("Posting data to Zoho CRM...");
             // API request with current token
             const response = await axios.post(
                 `${process.env.ZOHO_API_URL}${module}`,
@@ -181,6 +190,7 @@ export const ZohoCRM = {
 
         } catch (error) {
             // Handle token errors
+            console.log("Error in postData function", error?.response?.data);
             if (retryCount < MAX_RETRIES &&
                 (error.response?.data?.code === 'INVALID_TOKEN' || error.response?.status === 401)) {
 
@@ -255,7 +265,9 @@ export const ZohoCRM = {
                 secondsRemaining: Math.max(0, secondsRemaining),
                 createdAt: tokenRecord.created_at,
                 updatedAt: tokenRecord.updated_at,
-                hasRefreshToken: !!tokenRecord.refresh_token
+                hasRefreshToken: !!tokenRecord.refresh_token,
+                accessToken: tokenRecord.access_token,
+                refreshToken: tokenRecord.refresh_token,
             };
         } catch (error) {
             console.error('Token status check failed:', error);
