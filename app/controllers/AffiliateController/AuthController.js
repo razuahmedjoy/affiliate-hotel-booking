@@ -25,7 +25,9 @@ const createPaymentLinkAndQrCode = async (affiliateId, referralLink, location) =
             currency: "INR",
             description: "Payment for initial registration",
             notes: {
-                receipt: receipt
+                receipt: receipt,
+                affiliateId,
+                location,
             },
 
 
@@ -117,52 +119,56 @@ export const AffiliateRegister = catchAsync(async (req, res) => {
         return { newUser, newAffiliate };
     });
 
+
+
     const { newUser, newAffiliate } = result;
-    // ✅ Respond immediately
-    sendResponse(res, {
-        statusCode: httpStatus.CREATED,
-        success: true,
-        message: "Affiliate registered successfully.",
-    });
 
 
-    setTimeout(async () => {
-        try {
-            // Generate the referral link URL
-            const referralLink = `${process.env.FRONTEND_URL}/customer/${newAffiliate.uniqueCode}`;
-
-            const { paymentLink, qrCodeUrl } = await createPaymentLinkAndQrCode(newAffiliate.id, referralLink, newAffiliate.addresses[0].city);
-
-            await prisma.affiliate.update({
-                where: { id: newAffiliate.id },
-                data: {
-                    qrCodeUrl,
-                    paymentLink: paymentLink.short_url,
-                },
-            });
-
-
-            const dataToSendToZoho = {
-                "Name": newUser.firstName + " " + newUser.lastName,
-                "Email": newUser.email,
-                "phone_number": newUser.phone,
-                "Address": `${newAffiliate.addresses[0].street}\n${newAffiliate.addresses[0].city}\n${newAffiliate.addresses[0].state}\n${newAffiliate.addresses[0].country}\n${newAffiliate.addresses[0].zipCode}`,
-            }
-            const sentToZoho = await ZohoCRM.postData("Affiliates", dataToSendToZoho);
-            console.log("sentToZoho", sentToZoho);
-
-
-            if (sentToZoho?.data[0]?.code != "SUCCESS") {
-                console.log("Error sending data to Zoho", sentToZoho?.data[0]?.message);
-                // Optionally log or handle the error
-            }
-
-
-        } catch (err) {
-            console.error("Async task failed:", err);
-            // Optionally log or retry
+    try {
+        const referralLink = `${process.env.FRONTEND_URL}/customer/${newAffiliate.uniqueCode}`;
+    
+        const { paymentLink, qrCodeUrl } = await createPaymentLinkAndQrCode(
+            newAffiliate.id,
+            referralLink,
+            newAffiliate.addresses[0].city
+        );
+    
+        await prisma.affiliate.update({
+            where: { id: newAffiliate.id },
+            data: {
+                qrCodeUrl,
+                paymentLink: paymentLink.short_url,
+            },
+        });
+    
+        const dataToSendToZoho = {
+            Name: newUser.firstName + " " + newUser.lastName,
+            Email: newUser.email,
+            phone_number: newUser.phone,
+            Address: `${newAffiliate.addresses[0].street}\n${newAffiliate.addresses[0].city}\n${newAffiliate.addresses[0].state}\n${newAffiliate.addresses[0].country}\n${newAffiliate.addresses[0].zipCode}`,
+        };
+    
+        const sentToZoho = await ZohoCRM.postData("Affiliates", dataToSendToZoho);
+        if (sentToZoho?.data[0]?.code !== "SUCCESS") {
+            console.error("Error sending data to Zoho", sentToZoho?.data[0]?.message);
         }
-    }, 100); // Delayed async task
+    
+        // ✅ Now send response
+        return sendResponse(res, {
+            statusCode: httpStatus.CREATED,
+            success: true,
+            message: "Affiliate registered successfully.",
+        });
+    
+    } catch (err) {
+        console.error("Post-registration tasks failed:", err);
+        return sendResponse(res, {
+            statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+            success: false,
+            message: "Registration succeeded but follow-up actions failed.",
+        });
+    }
+  
 
 });
 
