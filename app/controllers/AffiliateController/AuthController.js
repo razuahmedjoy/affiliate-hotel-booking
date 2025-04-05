@@ -116,22 +116,22 @@ export const AffiliateRegister = catchAsync(async (req, res) => {
         });
 
         // Generate the referral link URL
-        const referralLink = `${process.env.FRONTEND_URL}/customer/${newAffiliate.uniqueCode}`;
+        // const referralLink = `${process.env.FRONTEND_URL}/customer/${newAffiliate.uniqueCode}`;
 
-        const { paymentLink, qrCodeUrl } = await createPaymentLinkAndQrCode(newAffiliate.id, referralLink, newAffiliate.addresses[0].city);
+        // const { paymentLink, qrCodeUrl } = await createPaymentLinkAndQrCode(newAffiliate.id, referralLink, newAffiliate.addresses[0].city);
 
 
-        // console.log(paymentLink, qrCodeUrl);
+        // // console.log(paymentLink, qrCodeUrl);
 
-        // Update the affiliate record with the QR code URL
+        // // Update the affiliate record with the QR code URL
 
-        const updatedAffiliate = await prisma.affiliate.update({
-            where: { id: newAffiliate.id },
-            data: {
-                qrCodeUrl,
-                paymentLink: paymentLink.short_url,
-            },
-        });
+        // const updatedAffiliate = await prisma.affiliate.update({
+        //     where: { id: newAffiliate.id },
+        //     data: {
+        //         qrCodeUrl,
+        //         paymentLink: paymentLink.short_url,
+        //     },
+        // });
 
         const dataToSendToZoho = {
             "Name": newUser.firstName + " " + newUser.lastName,
