@@ -126,6 +126,15 @@ app.get('/token-status', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+app.get('/seed-refresh-token', async (req, res) => {
+    try {
+        await ZohoCRM.initializeTokens('','1000.d6b922e5997399fa41df37fe79e62b69.289c3db508c5cd123b5980aa1ec392c5');
+
+        res.json({ message: 'Zoho tokens initialized' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 app.get('/tokeninitiate', async (req, res) => {
     // redirect to zoho auth url
     // first check if there is both access token and refresh token in the database

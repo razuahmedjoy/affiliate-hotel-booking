@@ -68,8 +68,7 @@ export const AffiliateRegister = catchAsync(async (req, res) => {
     const formattedDate = normalizedDate.toISOString();
 
     // Start the transaction
-    const result = await prisma.$transaction(async (prisma) => 
-        {
+    const result = await prisma.$transaction(async (prisma) => {
         // Create the User first
         const newUser = await prisma.user.create({
             data: {
@@ -115,58 +114,55 @@ export const AffiliateRegister = catchAsync(async (req, res) => {
             },
         });
 
-        // Generate the referral link URL
-        // const referralLink = `${process.env.FRONTEND_URL}/customer/${newAffiliate.uniqueCode}`;
-
-        // const { paymentLink, qrCodeUrl } = await createPaymentLinkAndQrCode(newAffiliate.id, referralLink, newAffiliate.addresses[0].city);
-
-
-        // // console.log(paymentLink, qrCodeUrl);
-
-        // // Update the affiliate record with the QR code URL
-
-        // const updatedAffiliate = await prisma.affiliate.update({
-        //     where: { id: newAffiliate.id },
-        //     data: {
-        //         qrCodeUrl,
-        //         paymentLink: paymentLink.short_url,
-        //     },
-        // });
-
-        const dataToSendToZoho = {
-            "Name": newUser.firstName + " " + newUser.lastName,
-            "Email": newUser.email,
-            "phone_number": newUser.phone,
-            "Address": `${newAffiliate.addresses[0].street}\n${newAffiliate.addresses[0].city}\n${newAffiliate.addresses[0].state}\n${newAffiliate.addresses[0].country}\n${newAffiliate.addresses[0].zipCode}`,
-        }
-        const sentToZoho = await ZohoCRM.postData("Affiliates", dataToSendToZoho);
-        // console.log("sentToZoho", sentToZoho);
-
-
-        if (sentToZoho?.data[0]?.code != "SUCCESS") {
-            return sendResponse(res, {
-                statusCode: httpStatus.BAD_REQUEST,
-                success: false,
-                message: "Failed to send data to Zoho",
-                data: sentToZoho?.data,
-            });
-        }
-
-        return { updatedAffiliate, referralLink };
-    },{
-        maxWait: 10000, // Maximum wait time for the transaction
-        timeout: 10000, // Maximum execution time for the transaction
+        return { newUser, newAffiliate };
     });
 
-    const { updatedAffiliate, referralLink } = result;
-
-    // Generate a JWT token
-    return sendResponse(res, {
+    const { newUser, newAffiliate } = result;
+    // ✅ Respond immediately
+    sendResponse(res, {
         statusCode: httpStatus.CREATED,
         success: true,
-        message: "Affiliate registered successfully",
+        message: "Affiliate registered successfully.",
     });
 
+
+    setTimeout(async () => {
+        try {
+            // Generate the referral link URL
+            const referralLink = `${process.env.FRONTEND_URL}/customer/${newAffiliate.uniqueCode}`;
+
+            const { paymentLink, qrCodeUrl } = await createPaymentLinkAndQrCode(newAffiliate.id, referralLink, newAffiliate.addresses[0].city);
+
+            await prisma.affiliate.update({
+                where: { id: newAffiliate.id },
+                data: {
+                    qrCodeUrl,
+                    paymentLink: paymentLink.short_url,
+                },
+            });
+
+
+            const dataToSendToZoho = {
+                "Name": newUser.firstName + " " + newUser.lastName,
+                "Email": newUser.email,
+                "phone_number": newUser.phone,
+                "Address": `${newAffiliate.addresses[0].street}\n${newAffiliate.addresses[0].city}\n${newAffiliate.addresses[0].state}\n${newAffiliate.addresses[0].country}\n${newAffiliate.addresses[0].zipCode}`,
+            }
+            const sentToZoho = await ZohoCRM.postData("Affiliates", dataToSendToZoho);
+            console.log("sentToZoho", sentToZoho);
+
+
+            if (sentToZoho?.data[0]?.code != "SUCCESS") {
+                console.log("Error sending data to Zoho", sentToZoho?.data[0]?.message);
+                // Optionally log or handle the error
+            }
+
+
+        } catch (err) {
+            console.error("Async task failed:", err);
+            // Optionally log or retry
+        }
+    }, 100); // Delayed async task
 
 });
 
